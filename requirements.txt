@@ -11,4 +11,3 @@ pandas
 sentence-transformers
 torch
 transformers
-langchain-huggingface
