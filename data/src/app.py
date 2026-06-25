@@ -1,3 +1,6 @@
+import os
+os.environ['HF_ENDPOINT'] = 'https://huggingface.co'
+
 import streamlit as st
 import os
 import re
