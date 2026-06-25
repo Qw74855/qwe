@@ -3,7 +3,6 @@ import re
 import requests
 from dotenv import load_dotenv
 from langchain_community.vectorstores import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
 from prompt_templates import RAG_PROMPT
 from tools import get_current_week, calculate_gpa
 
