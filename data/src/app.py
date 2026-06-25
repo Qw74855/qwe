@@ -1,6 +1,6 @@
 # 第一行配置HF国内镜像，解决模型下载超时
 import os
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ['HF_ENDPOINT'] = 'https://huggingface.co'
 
 import streamlit as st
 import re
