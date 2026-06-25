@@ -22,6 +22,22 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# 全局美化CSS
+st.markdown("""
+<style>
+/* 消息左右边距缩小，更美观 */
+[data-testid="stChatMessage"] {
+    max-width: 88%;
+    margin: 4px auto;
+}
+/* 滚动容器圆角美化 */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: 12px;
+    box-shadow: 0 1px 3px #eee;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ------------------- 缓存资源（增加加载提示） -------------------
 @st.cache_resource(show_spinner="正在加载文本向量化模型...")
 def load_embeddings():
@@ -122,7 +138,7 @@ def agent_answer(question):
     # 默认知识库问答
     return rag_retrieve_answer(question)
 
-# ------------------- 侧边栏功能面板（新增丰富交互） -------------------
+# ------------------- 侧边栏功能面板【完全保留原代码无修改】 -------------------
 with st.sidebar:
     st.header("⚙️ 功能面板")
     st.divider()
@@ -156,7 +172,8 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# ------------------- 主页面聊天UI美化 -------------------
+# ====================== 主页面全新分层滚动布局 ======================
+# 1. 顶部标题简介区
 st.title("🏫 校园生活百事通助手")
 st.markdown("""
 > 基于本地校园知识库 + 大模型RAG智能问答，兼顾周数查询、绩点计算，一站式解决校园全部疑问
@@ -169,28 +186,36 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "你好！我是校园百事通，有任何校园问题、想查教学周、计算绩点都可以直接问我~"}
     ]
 
-# 渲染历史对话
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"], avatar="👤" if msg["role"]=="user" else "🤖"):
-        st.markdown(msg["content"])
+# 2. 中间固定高度滚动聊天框（核心布局修改）
+chat_window = st.container(height=600, border=True)
+with chat_window:
+    # 渲染所有历史对话
+    for msg in st.session_state.messages:
+        avatar = "👤" if msg["role"] == "user" else "🤖"
+        with st.chat_message(msg["role"], avatar=avatar):
+            st.markdown(msg["content"])
 
-# 聊天输入框，支持侧边快捷填充
+st.divider()
+
+# 3. 底部独立输入区域
 input_text = st.chat_input("请输入你的校园问题...")
-# 侧边快捷提问赋值
+
+# 侧边快捷提问赋值逻辑不变
 if "temp_input" in st.session_state and st.session_state["temp_input"]:
     input_text = st.session_state["temp_input"]
     del st.session_state["temp_input"]
 
 # 处理用户提问
 if input_text:
-    # 保存用户消息
+    # 保存用户消息并刷新页面
     st.session_state.messages.append({"role": "user", "content": input_text})
-    with st.chat_message("user", avatar="👤"):
-        st.markdown(input_text)
+    st.rerun()
 
-    # 生成回复
-    with st.chat_message("assistant", avatar="🤖"):
-        with st.spinner("AI正在检索知识库并思考答案..."):
-            res = agent_answer(input_text)
-        st.markdown(res)
-        st.session_state.messages.append({"role": "assistant", "content": res})   
+# 生成AI回复并渲染到滚动窗口
+if input_text:
+    with chat_window:
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("AI正在检索知识库并思考答案..."):
+                reply = agent_answer(input_text)
+            st.markdown(reply)
+        st.session_state.messages.append({"role": "assistant", "content": reply})
