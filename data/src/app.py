@@ -193,4 +193,4 @@ if input_text:
         with st.spinner("AI正在检索知识库并思考答案..."):
             res = agent_answer(input_text)
         st.markdown(res)
-        st.session_state.messages.append({"role": "assistant", "content": res})   换种布局形式
+        st.session_state.messages.append({"role": "assistant", "content": res})   
