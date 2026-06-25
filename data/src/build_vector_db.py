@@ -1,31 +1,36 @@
 # src/build_vector_db.py
 import os
-# 配置国内镜像源
+# 统一国内镜像，和检索脚本一致
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-import pandas as pd
+
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.document_loaders import TextLoader, DirectoryLoader
 
-# 1. 加载csv问答数据
-df = pd.read_csv('data/campus_data.csv')
-
-# 2. 初始化本地中文嵌入模型（无需API，本地运行）
+# 1. 初始化嵌入模型（和检索代码完全一致）
 embeddings = HuggingFaceEmbeddings(
     model_name="BAAI/bge-small-zh"
 )
 
-# 3. 提取文本与元数据
-texts = df['answer'].tolist()
-metadatas = df[['id', 'category', 'question']].to_dict("records")
+# 2. 加载校园知识库文档（存放校园规则、奖学金、报修等txt/md文件）
+# 把你的所有校园文档放在 ./docs 文件夹下
+loader = DirectoryLoader("./docs", glob="**/*.txt", loader_cls=TextLoader)
+documents = loader.load()
 
-# 4. 创建并持久化Chroma向量数据库
-vector_db = Chroma.from_texts(
-    texts=texts,
+# 3. 文本分块
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=50
+)
+split_docs = text_splitter.split_documents(documents)
+
+# 4. 构建并持久化向量库到 ./vector_db
+vector_db = Chroma.from_documents(
+    documents=split_docs,
     embedding=embeddings,
-    metadatas=metadatas,
     persist_directory="./vector_db"
 )
+# 持久化保存到本地文件夹
 vector_db.persist()
-
-# 打印入库结果
-print(f"向量库构建完成，已存入{len(texts)}条问答记录")
+print("向量库构建完成，已保存至 ./vector_db")
